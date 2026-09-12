@@ -9,8 +9,8 @@ import yfinance as yf
 # =========================
 
 TARGETS = {
-    "3635": 1500,
-    "5032": 3000
+    "3635": 1700,
+    "5032": 3200
 }
 
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
