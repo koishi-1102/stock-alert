@@ -18,7 +18,7 @@ STATE_FILE = "state.json"
 
 
 # =========================
-# Discord Webhook確認
+# Webhook確認
 # =========================
 
 if not WEBHOOK_URL:
@@ -38,6 +38,7 @@ with open(STATE_FILE, "r", encoding="utf-8") as f:
 # =========================
 
 def send_discord(message):
+
     data = {
         "content": message
     }
@@ -65,29 +66,53 @@ for code, target_price in TARGETS.items():
     print(f"{code} 現在価格：{price:.2f}円")
     print(f"{code} 設定価格：{target_price}円")
 
-    # 設定価格以下
+
+    # =========================
+    # ① 通常の株価報告
+    # =========================
+
+    normal_message = (
+        f"📊 株価定期報告 📊\n\n"
+        f"{code}の現在価格：{price:.2f}円"
+    )
+
+    send_discord(normal_message)
+
+
+    # =========================
+    # ② 設定価格以下なら特別アラート
+    # =========================
+
     if price <= target_price:
 
-        # まだ通知していない場合
         if not state[code]["notified"]:
 
-            message = (
+            alert_message = (
                 f"🚨🚨 株価アラート 🚨🚨\n\n"
-                f"{code} が設定価格以下になりました！\n\n"
+                f"{code}が設定価格以下になりました！\n\n"
                 f"現在価格：{price:.2f}円\n"
                 f"設定価格：{target_price}円"
             )
 
-            send_discord(message)
+            send_discord(alert_message)
 
             state[code]["notified"] = True
 
-            print(f"{code} → Discord通知しました！")
+            print(f"{code} → 特別アラートを送信しました！")
 
         else:
-            print(f"{code} → 通知済みなので今回は通知しません。")
 
-    # 設定価格より上
+            print(
+                f"{code} → アラート済みなので、"
+                f"特別通知はしません。"
+            )
+
+
+    # =========================
+    # ③ 設定価格より上に戻ったら
+    #    再通知できる状態に戻す
+    # =========================
+
     else:
 
         if state[code]["notified"]:
@@ -95,12 +120,9 @@ for code, target_price in TARGETS.items():
             state[code]["notified"] = False
 
             print(
-                f"{code} → 設定価格を上回ったため、"
-                f"通知状態をリセットしました。"
+                f"{code} → 設定価格より上に戻ったため、"
+                f"アラート状態をリセットしました。"
             )
-
-        else:
-            print(f"{code} → 条件外です。")
 
 
 # =========================
@@ -108,11 +130,13 @@ for code, target_price in TARGETS.items():
 # =========================
 
 with open(STATE_FILE, "w", encoding="utf-8") as f:
+
     json.dump(
         state,
         f,
         ensure_ascii=False,
         indent=4
     )
+
 
 print("株価チェック完了！")
